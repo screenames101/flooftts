@@ -1,0 +1,94 @@
+import discord
+from discord.ext import commands
+import asyncio
+import os
+import sys
+
+# Define your intents
+intents = discord.Intents.default()
+
+# Initialize the bot with intents
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# Available TTS voices (you can add more if needed)
+AVAILABLE_VOICES = ['Joanna', 'Matthew', 'Amy']
+
+# Define a command to convert text to speech
+@bot.command()
+async def speak(ctx, voice: str, *, text: str):
+    """
+    Converts the provided text to speech using the specified voice.
+    Usage: !speak <voice> <text>
+    """
+    # Join the voice channel of the user who sent the command
+    vc = await ctx.author.voice.channel.connect()
+
+    # Convert the text to speech using the specified voice
+    vc.play(discord.FFmpegPCMAudio(executable="ffmpeg", pipe=True, stdin=discord.PCMVolumeTransformer(discord.TTSConverter().speech_to_buffer(text, voice))))
+
+    # Wait for the audio to finish playing
+    while vc.is_playing():
+        await asyncio.sleep(1)
+
+    # Disconnect from the voice channel
+    await vc.disconnect()
+
+# Define a command to set the TTS voice
+@bot.command()
+async def set_voice(ctx, voice: str):
+    """
+    Sets the TTS voice to use for text-to-speech conversion.
+    Usage: !set_voice <voice>
+    """
+    if voice in AVAILABLE_VOICES:
+        # Save the selected voice to the user's settings (you can implement this)
+        await ctx.send(f"Voice set to {voice}.")
+    else:
+        await ctx.send("Voice not available. Please choose from the available voices.")
+
+# Define a command to restart the bot
+@bot.command()
+async def restart_bot(ctx):
+    """
+    Restarts the bot.
+    """
+    await ctx.send("Restarting bot...")
+    await bot.logout()
+    os.execv(sys.executable, ['python'] + sys.argv)
+
+# Custom help command
+@bot.command()
+async def bot_help(ctx):
+    """
+    Displays information about available commands and options.
+    """
+    help_message = """
+    **Available Commands:**
+    !speak <voice> <text> - Converts the provided text to speech using the specified voice.
+    !set_voice <voice> - Sets the TTS voice to use for text-to-speech conversion.
+    !restart_bot - Restarts the bot.
+
+    **Available Voices:**
+    Joanna, Matthew, Amy
+    """
+    await ctx.send(help_message)
+
+# Define a task to check for inactivity and disconnect after 10 minutes
+async def check_inactivity():
+    await bot.wait_until_ready()
+    while not bot.is_closed():
+        await asyncio.sleep(600)  # 600 seconds = 10 minutes
+
+        # Check if the bot is connected to any voice channels
+        for vc in bot.voice_clients:
+            if len(vc.channel.members) == 1:  # Only the bot is in the channel
+                await vc.disconnect()
+
+# Set up the bot using asynchronous initialization hooks
+@bot.event
+async def on_ready():
+    # Start the task to check for inactivity
+    bot.loop.create_task(check_inactivity())
+
+# Run the bot
+bot.run(MTIzODE2OTAzOTcxNzUzMTgxOQ.GS8IWW.OJMc4HTalX36BQ9tgeKPoA2v_Gd_Gyg9lMB9e0)
