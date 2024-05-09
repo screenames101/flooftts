@@ -91,4 +91,5 @@ async def on_ready():
     bot.loop.create_task(check_inactivity())
 
 # Run the bot
-bot.run(MTIzODE2OTAzOTcxNzUzMTgxOQ.GS8IWW.OJMc4HTalX36BQ9tgeKPoA2v_Gd_Gyg9lMB9e0)
+TOKEN = os.environ['TOKEN']
+bot.run(TOKEN)
